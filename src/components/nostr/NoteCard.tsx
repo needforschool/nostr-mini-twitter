@@ -10,6 +10,7 @@ import { useNostrProfile } from '@/lib/nostr/hooks';
 import { createReactionEvent, publishEvent } from '@/lib/nostr/events';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface NoteCardProps {
   event: Event;
@@ -61,20 +62,24 @@ export function NoteCard({ event, onReply, isReply = false, className }: NoteCar
     <Card className={cn("border shadow-sm mb-4", className)}>
       <CardContent className="pt-4">
         <div className="flex items-start space-x-3">
-          <Avatar className="h-10 w-10">
-            {profile?.picture ? (
-              <AvatarImage src={profile.picture} alt={displayName} />
-            ) : (
-              <AvatarFallback className="bg-muted flex items-center justify-center">
-                <User className="h-5 w-5 text-muted-foreground" />
-              </AvatarFallback>
-            )}
-          </Avatar>
+          <Link href={`/profile/${event.pubkey}`}>
+            <Avatar className="h-10 w-10">
+              {profile?.picture ? (
+                <AvatarImage src={profile.picture} alt={displayName} />
+              ) : (
+                <AvatarFallback className="bg-muted flex items-center justify-center">
+                  <User className="h-5 w-5 text-muted-foreground" />
+                </AvatarFallback>
+              )}
+            </Avatar>
+          </Link>
           
           <div className="flex-1 space-y-1.5">
             <div className="flex items-center justify-between">
               <div>
-                <span className="font-medium text-sm">{displayName}</span>
+                <Link href={`/profile/${event.pubkey}`} className="hover:underline">
+                  <span className="font-medium text-sm">{displayName}</span>
+                </Link>
                 <span className="text-muted-foreground text-xs ml-2">
                   {timeAgo}
                 </span>
@@ -103,15 +108,17 @@ export function NoteCard({ event, onReply, isReply = false, className }: NoteCar
       
       <CardFooter className="pt-0 flex justify-between border-t">
         <div className="flex space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground"
-            onClick={handleReply}
-          >
-            <MessageSquare className="mr-1 h-4 w-4" />
-            <span className="text-xs">Reply</span>
-          </Button>
+          {onReply && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={handleReply}
+            >
+              <MessageSquare className="mr-1 h-4 w-4" />
+              <span className="text-xs">Reply</span>
+            </Button>
+          )}
           
           <Button
             variant="ghost"
