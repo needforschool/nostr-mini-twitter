@@ -2,13 +2,16 @@
 
 import React, { useState } from 'react';
 import { Event } from 'nostr-tools';
-import { useNostrTimeline } from '@/lib/nostr/hooks';
 import { NoteCard } from './NoteCard';
 import { NoteForm } from './NoteForm';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { fetchEvents } from '@/lib/nostr/events';
+import { getSavedRelays, connectToRelays } from '@/lib/nostr/relays';
+import { TEXT_NOTE_KIND } from '@/lib/nostr/constants';
+import { useEffect } from 'react';
 
 interface TimelineProps {
   className?: string;
@@ -16,14 +19,64 @@ interface TimelineProps {
 
 export function Timeline({ className }: TimelineProps) {
   const [replyToEvent, setReplyToEvent] = useState<Event | null>(null);
-  const { events, isLoading, refetch } = useNostrTimeline({
-    limit: 50,
-    since: Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60, // Last 7 days
-  });
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
-  // Handle refresh
-  const handleRefresh = () => {
-    refetch();
+  // Fetch events on initial load
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setIsLoading(true);
+      try {
+        // S'assurer que les relais sont connectés
+        await connectToRelays(getSavedRelays());
+        
+        // Création du filtre
+        const filter = {
+          kinds: [TEXT_NOTE_KIND],
+          since: Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60, // Last 7 days
+          limit: 50,
+        };
+        
+        // Récupérer les événements
+        const fetchedEvents = await fetchEvents(filter);
+        
+        // Trier les événements (les plus récents d'abord)
+        fetchedEvents.sort((a: Event, b: Event) => b.created_at - a.created_at);
+        
+        setEvents(fetchedEvents);
+      } catch (error) {
+        console.error("Error loading timeline data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadInitialData();
+  }, []);
+  
+  // Fonction pour rafraîchir manuellement
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    try {
+      // Création du filtre
+      const filter = {
+        kinds: [TEXT_NOTE_KIND],
+        since: Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60, // Last 7 days
+        limit: 50,
+      };
+      
+      // Récupérer les événements
+      const fetchedEvents = await fetchEvents(filter);
+      
+      // Trier les événements (les plus récents d'abord)
+      fetchedEvents.sort((a: Event, b: Event) => b.created_at - a.created_at);
+      
+      setEvents(fetchedEvents);
+    } catch (error) {
+      console.error("Error refreshing timeline:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   // Handle reply to note
@@ -38,7 +91,7 @@ export function Timeline({ className }: TimelineProps) {
   
   // Handle note published (either new note or reply)
   const handleNotePublished = () => {
-    refetch();
+    handleRefresh();
     setReplyToEvent(null);
   };
   

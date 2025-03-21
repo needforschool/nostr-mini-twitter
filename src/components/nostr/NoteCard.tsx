@@ -3,12 +3,11 @@
 import React, { useState } from 'react';
 import { Event } from 'nostr-tools';
 import { formatDistanceToNow } from 'date-fns';
-import { Heart, MessageSquare, Share, MoreHorizontal } from 'lucide-react';
+import { Heart, MessageSquare, Share, MoreHorizontal, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useNostrProfile } from '@/lib/nostr/hooks';
 import { createReactionEvent, publishEvent } from '@/lib/nostr/events';
-import { getCurrentUserPublicKey } from '@/lib/nostr/keys';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
@@ -66,7 +65,9 @@ export function NoteCard({ event, onReply, isReply = false, className }: NoteCar
             {profile?.picture ? (
               <AvatarImage src={profile.picture} alt={displayName} />
             ) : (
-              <AvatarFallback>{displayName.slice(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarFallback className="bg-muted flex items-center justify-center">
+                <User className="h-5 w-5 text-muted-foreground" />
+              </AvatarFallback>
             )}
           </Avatar>
           
@@ -83,7 +84,17 @@ export function NoteCard({ event, onReply, isReply = false, className }: NoteCar
               </Button>
             </div>
             
-            <div className="text-sm">
+            {/* Utilisation de styles inline pour garantir le wrapping */}
+            <div 
+              className="text-sm" 
+              style={{ 
+                overflowWrap: 'break-word', 
+                wordBreak: 'break-word',
+                wordWrap: 'break-word',
+                maxWidth: '100%',
+                hyphens: 'auto'
+              }}
+            >
               {content}
             </div>
           </div>

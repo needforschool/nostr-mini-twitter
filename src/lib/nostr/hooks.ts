@@ -59,6 +59,7 @@ export function useNostrEvents(
     relayUrls?: string[];
     subscribe?: boolean;
     initialFetch?: boolean;
+    autoUpdate?: boolean; // Nouvel option pour contrôler l'auto-refresh
   } = {}
 ) {
   const {
@@ -66,10 +67,13 @@ export function useNostrEvents(
     relayUrls = getSavedRelays(),
     subscribe = true,
     initialFetch = true,
+    autoUpdate = false, // Désactivé par défaut
   } = options;
 
   const [events, setEvents] = useState<Event[]>([]);
+  const [pendingEvents, setPendingEvents] = useState<Event[]>([]); // Pour stocker les nouveaux events sans les afficher
   const [isLoading, setIsLoading] = useState<boolean>(initialFetch && enabled);
+  const [hasNewEvents, setHasNewEvents] = useState<boolean>(false); // Indicateur pour l'UI
   const unsubRef = useRef<(() => void) | null>(null);
 
   // Function to fetch events
@@ -84,12 +88,34 @@ export function useNostrEvents(
       fetchedEvents.sort((a: Event, b: Event) => b.created_at - a.created_at);
       
       setEvents(fetchedEvents);
+      // Clear pending events and reset hasNewEvents indicator
+      setPendingEvents([]);
+      setHasNewEvents(false);
     } catch (error) {
       console.error('Error fetching events:', error);
     } finally {
       setIsLoading(false);
     }
   }, [filter, relayUrls, enabled]);
+
+  // Apply pending events to the main events list
+  const applyPendingEvents = useCallback(() => {
+    if (pendingEvents.length > 0) {
+      setEvents(prev => {
+        // Merge events, avoid duplicates, and sort
+        const allEvents = [...prev, ...pendingEvents];
+        const uniqueEvents = allEvents.filter((event, index, self) => 
+          index === self.findIndex(e => e.id === event.id)
+        );
+        uniqueEvents.sort((a, b) => b.created_at - a.created_at);
+        return uniqueEvents;
+      });
+      
+      // Clear pending events and reset indicator
+      setPendingEvents([]);
+      setHasNewEvents(false);
+    }
+  }, [pendingEvents]);
 
   // Setup subscription and initial fetch
   useEffect(() => {
@@ -117,18 +143,29 @@ export function useNostrEvents(
           unsubRef.current = subscribeToEvents(
             filter,
             (event: Event, _relay: string) => {
-              setEvents(prev => {
-                // Check if event already exists to avoid duplicates
-                if (prev.some(e => e.id === event.id)) {
-                  return prev;
+              // Check if event already exists in events or pendingEvents to avoid duplicates
+              const isDuplicate = 
+                events.some(e => e.id === event.id) || 
+                pendingEvents.some(e => e.id === event.id);
+              
+              if (!isDuplicate) {
+                if (autoUpdate) {
+                  // If auto-update is enabled, add directly to main events
+                  setEvents(prev => {
+                    const updated = [event, ...prev];
+                    updated.sort((a, b) => b.created_at - a.created_at);
+                    return updated;
+                  });
+                } else {
+                  // Otherwise, add to pending events
+                  setPendingEvents(prev => {
+                    const updated = [event, ...prev];
+                    updated.sort((a, b) => b.created_at - a.created_at);
+                    return updated;
+                  });
+                  setHasNewEvents(true);
                 }
-                
-                // Add new event and sort
-                const updated = [event, ...prev];
-                updated.sort((a: Event, b: Event) => b.created_at - a.created_at);
-                
-                return updated;
-              });
+              }
             },
             relayUrls
           );
@@ -147,17 +184,15 @@ export function useNostrEvents(
         unsubRef.current = null;
       }
     };
-  }, [filter, relayUrls, subscribe, initialFetch, enabled, fetchEventsData]);
-
-  // Refetch function for manual refreshes
-  const refetch = useCallback(async () => {
-    await fetchEventsData();
-  }, [fetchEventsData]);
+  }, [filter, relayUrls, subscribe, initialFetch, enabled, fetchEventsData, autoUpdate, events, pendingEvents]);
 
   return {
     events,
+    pendingEvents,
+    hasNewEvents,
     isLoading,
-    refetch,
+    refetch: fetchEventsData,
+    loadNewEvents: applyPendingEvents, // Nouvelle méthode pour chargement manuel
   };
 }
 
@@ -244,6 +279,7 @@ export function useNostrTimeline(
     since?: number;
     relayUrls?: string[];
     enabled?: boolean;
+    autoUpdate?: boolean; // Ajout du paramètre autoUpdate
   } = {}
 ) {
   const {
@@ -251,6 +287,7 @@ export function useNostrTimeline(
     since = Math.floor(Date.now() / 1000) - 24 * 60 * 60, // Last 24 hours
     relayUrls = getSavedRelays(),
     enabled = true,
+    autoUpdate = false, // Désactivé par défaut
   } = options;
 
   const filter: Filter = {
@@ -264,6 +301,7 @@ export function useNostrTimeline(
     enabled,
     subscribe: true,
     initialFetch: true,
+    autoUpdate,
   });
 }
 
