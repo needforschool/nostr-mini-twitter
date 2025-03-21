@@ -19,11 +19,11 @@ export function ClientWrapper({ children }: ClientWrapperProps) {
 
   // Connect to relays on login
   useEffect(() => {
-    if (isLoggedIn) {
+    if (isLoggedIn && !isLoading) {
       const relays = getSavedRelays();
       connectToRelays(relays);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isLoading]);
 
   // Important: Make sure children is a function and call it with the props
   return <>{children({ isLoggedIn, isLoading, publicKey })}</>;

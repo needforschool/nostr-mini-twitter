@@ -19,67 +19,73 @@ export default function SettingsPage() {
   return (
     <main className="min-h-screen bg-background">
       <ClientWrapper>
-        {({ isLoggedIn, publicKey }) => (
+        {({ isLoggedIn, isLoading, publicKey }) => (
           <>
-            {!isLoggedIn && <Redirect to="/" />}
+            {!isLoading && !isLoggedIn && <Redirect to="/" />}
             
             <Header />
             
-            <div className="container p-4 mx-auto max-w-6xl">
-              <div className="max-w-2xl mx-auto">
-                <h1 className="text-2xl font-bold mb-6">Settings</h1>
-                
-                <Tabs defaultValue="relays" className="w-full">
-                  <TabsList className="w-full grid grid-cols-3 mb-6">
-                    <TabsTrigger value="relays">Relays</TabsTrigger>
-                    <TabsTrigger value="profile">Profile</TabsTrigger>
-                    <TabsTrigger value="account">Account</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="relays">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Relay Management</CardTitle>
-                        <CardDescription>
-                          Configure which Nostr relays to connect to
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <RelaySettings />
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                  
-                  <TabsContent value="profile">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Profile Settings</CardTitle>
-                        <CardDescription>
-                          Update your profile information
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {publicKey && <ProfileSettings pubkey={publicKey} />}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                  
-                  <TabsContent value="account">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Account Settings</CardTitle>
-                        <CardDescription>
-                          Manage your account and keys
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {publicKey && <AccountSettings pubkey={publicKey} />}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
+            {isLoading ? (
+              <div className="container p-4 mx-auto max-w-6xl flex justify-center items-center min-h-[50vh]">
+                <p>Loading...</p>
               </div>
-            </div>
+            ) : (
+              <div className="container p-4 mx-auto max-w-6xl">
+                <div className="max-w-2xl mx-auto">
+                  <h1 className="text-2xl font-bold mb-6">Settings</h1>
+                  
+                  <Tabs defaultValue="relays" className="w-full">
+                    <TabsList className="w-full grid grid-cols-3 mb-6">
+                      <TabsTrigger value="relays">Relays</TabsTrigger>
+                      <TabsTrigger value="profile">Profile</TabsTrigger>
+                      <TabsTrigger value="account">Account</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="relays">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Relay Management</CardTitle>
+                          <CardDescription>
+                            Configure which Nostr relays to connect to
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <RelaySettings />
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    <TabsContent value="profile">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Profile Settings</CardTitle>
+                          <CardDescription>
+                            Update your profile information
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {publicKey && <ProfileSettings pubkey={publicKey} />}
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    <TabsContent value="account">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Account Settings</CardTitle>
+                          <CardDescription>
+                            Manage your account and keys
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {publicKey && <AccountSettings pubkey={publicKey} />}
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </div>
+            )}
           </>
         )}
       </ClientWrapper>
